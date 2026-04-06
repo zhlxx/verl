@@ -1,0 +1,1 @@
+conda run -n verl ray stop --force 2>&1; CUDA_VISIBLE_DEVICES=0 conda run -n verl bash tests/special_e2e/test_fsdp.sh 2>&1 | tail -60

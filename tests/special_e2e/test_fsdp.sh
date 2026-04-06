@@ -4,18 +4,20 @@ set -x
 export CUDA_VISIBLE_DEVICES=0
 conda activate verl
 
-project_name='GRPO-Qwen3_5'
-exp_name='GRPO-Qwen3_5-0_8B'
+project_name='GRPO-Qwen3'
+exp_name='GRPO-Qwen3-0_6B'
 gen_tp=1
 sp_size=1
 ENGINE=${1:-vllm}
 # RAY_DATA_HOME=${RAY_DATA_HOME:-"${HOME}/verl"}
 RAY_DATA_HOME=${RAY_DATA_HOME:-"${HOME}/dev/llm/verl"}
 # MODEL_PATH=${MODEL_PATH:-"${RAY_DATA_HOME}/models/Qwen3.5-27B"}
-MODEL_PATH=${MODEL_PATH:-"${RAY_DATA_HOME}/models/Qwen3.5-0.8B"}
+MODEL_PATH=${MODEL_PATH:-"${RAY_DATA_HOME}/models/Qwen3-0.6B"}
 CKPTS_DIR=${CKPTS_DIR:-"${RAY_DATA_HOME}/ckpts/${project_name}/${exp_name}"}
-TRAIN_FILE=${TRAIN_FILE:-"${RAY_DATA_HOME}/data/geo3k/train.parquet"}
-TEST_FILE=${TEST_FILE:-"${RAY_DATA_HOME}/data/geo3k/test.parquet"}
+# TRAIN_FILE=${TRAIN_FILE:-"${RAY_DATA_HOME}/data/geo3k/train.parquet"}
+# TEST_FILE=${TEST_FILE:-"${RAY_DATA_HOME}/data/geo3k/test.parquet"}
+TRAIN_FILE=${TRAIN_FILE:-"${HOME}/data/gsm8k/train.parquet"}
+TEST_FILE=${TEST_FILE:-"${HOME}/data/gsm8k/test.parquet"}
 WORKING_DIR=${WORKING_DIR:-"${PWD}"}
 RUNTIME_ENV=${RUNTIME_ENV:-"${WORKING_DIR}/verl/trainer/runtime_env.yaml"}
 
@@ -26,18 +28,17 @@ python3 -m verl.trainer.main_ppo \
     algorithm.adv_estimator=grpo \
     data.train_files="${TRAIN_FILE}" \
     data.val_files="${TEST_FILE}" \
-    data.train_batch_size=1 \
+    data.train_batch_size=8 \
     data.max_prompt_length=1024 \
     data.max_response_length=2048 \
     data.filter_overlong_prompts=True \
     data.truncation='error' \
-    data.image_key=images \
     data.shuffle=False \
     actor_rollout_ref.model.path=${MODEL_PATH} \
     actor_rollout_ref.model.use_remove_padding=True \
     actor_rollout_ref.model.enable_gradient_checkpointing=True \
     actor_rollout_ref.actor.optim.lr=1e-6 \
-    actor_rollout_ref.actor.ppo_mini_batch_size=1 \
+    actor_rollout_ref.actor.ppo_mini_batch_size=8 \
     actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=1 \
     actor_rollout_ref.actor.use_kl_loss=True \
     actor_rollout_ref.actor.entropy_coeff=0 \
@@ -75,7 +76,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.enable_prefix_caching=False \
     actor_rollout_ref.rollout.checkpoint_engine.update_weights_bucket_megabytes=6144 \
     algorithm.use_kl_in_reward=False \
-    trainer.use_legacy_worker_impl=auto \
+    trainer.use_legacy_worker_impl=disable \
     trainer.critic_warmup=0 \
     trainer.logger=['console','tensorboard'] \
     trainer.project_name="${project_name}" \
